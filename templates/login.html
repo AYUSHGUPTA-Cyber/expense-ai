@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f1f5f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Card */
+.login-box {
+    background: white;
+    padding: 40px;
+    width: 350px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+/* Logo */
+.logo {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* Title */
+h2 {
+    margin-bottom: 20px;
+}
+
+/* Input */
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    outline: none;
+    font-size: 14px;
+}
+
+/* Button */
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: #1a73e8;
+    border: none;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* Divider */
+.divider {
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #ddd;
+}
+
+.divider span {
+    margin: 0 10px;
+    font-size: 12px;
+    color: #777;
+}
+
+/* Google Button */
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: white;
+    transition: 0.2s;
+}
+
+.google-btn:hover {
+    background: #f8fafc;
+}
+
+.google-btn img {
+    width: 18px;
+    margin-right: 10px;
+}
+
+/* Error */
+.error {
+    color: red;
+    font-size: 13px;
+}
+
+/* Register */
+a {
+    display: block;
+    margin-top: 15px;
+    font-size: 13px;
+    color: #1a73e8;
+    text-decoration: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box">
+
+    <div class="logo">🚀 Expense AI</div>
+    <h2>Sign in</h2>
+
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <!-- NORMAL LOGIN -->
+    <form method="POST">
+        <input name="username" placeholder="Email or Username" required>
+        <input name="password" type="password" placeholder="Password" required>
+        <button type="submit">Continue</button>
+    </form>
+
+    <div class="divider"><span>OR</span></div>
+
+    <!-- GOOGLE SSO -->
+    <div class="google-btn" onclick="googleLogin()">
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg">
+        Sign in with Google
+    </div>
+
+    <a href="/register">Create account</a>
+
+</div>
+
+<script>
+function googleLogin() {
+    window.location.href = "/login/google";
+}
+</script>
+
+</body>
+</html>

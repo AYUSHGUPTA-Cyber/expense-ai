@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Expense AI</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: white;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: auto;
+            padding: 20px;
+            padding-bottom: 120px;
+        }
+
+        h1 { font-size: 22px; }
+
+        .card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat { text-align: center; }
+
+        .input-box {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            width: 100%;
+        }
+
+        button {
+            background: #22c55e;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .quick { margin-top: 10px; }
+
+        .chip {
+            display: inline-block;
+            background: #1e3a5f;
+            padding: 5px 10px;
+            margin: 4px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* CHAT UI */
+        .chat-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            padding: 10px;
+        }
+
+        .chat-box {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+        }
+
+        .msg-user {
+            text-align: right;
+            margin: 5px;
+            color: #22c55e;
+        }
+
+        .msg-ai {
+            text-align: left;
+            margin: 5px;
+            color: #60a5fa;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input input {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🚀 Expense AI</h1>
+
+    <!-- STATS -->
+    <div class="card stats">
+        <div class="stat">
+            <h3 id="total">₹0</h3>
+            <p>Total</p>
+        </div>
+        <div class="stat">
+            <h3 id="topCategory">-</h3>
+            <p>Top</p>
+        </div>
+        <div class="stat">
+            <h3 id="avg">₹0</h3>
+            <p>Daily</p>
+        </div>
+    </div>
+
+    <!-- ADD -->
+    <div class="card">
+        <div class="input-box">
+            <input id="amount" type="number" placeholder="Amount ₹">
+            <input id="category" placeholder="Category">
+            <button onclick="addExpense()">+</button>
+        </div>
+
+        <div class="quick" id="recent"></div>
+    </div>
+
+    <!-- CHART -->
+    <div class="card">
+        <h3>📊 Category</h3>
+        <canvas id="categoryChart"></canvas>
+    </div>
+
+</div>
+
+<!-- CHAT -->
+<div class="chat-container">
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="chat-input">
+        <input id="chatInput" placeholder="Ask AI about your expenses...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+</div>
+
+<script>
+let catChart;
+let recentCategories = [];
+
+// FETCH DATA
+async function fetchData() {
+    const res = await fetch('/data');
+    const data = await res.json();
+
+    document.getElementById('total').innerText = "₹" + data.total;
+
+    let maxCat = Object.keys(data.category || {}).reduce((a, b) =>
+        data.category[a] > data.category[b] ? a : b, "-");
+
+    document.getElementById('topCategory').innerText = maxCat;
+
+    let days = Object.keys(data.daily || {}).length || 1;
+    document.getElementById('avg').innerText = "₹" + Math.round(data.total / days);
+
+    updateRecent(data.category);
+    renderCharts(data);
+}
+
+// CHART
+function renderCharts(data) {
+    if (catChart) catChart.destroy();
+
+    catChart = new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(data.category),
+            datasets: [{
+                data: Object.values(data.category)
+            }]
+        }
+    });
+}
+
+// ADD EXPENSE
+async function addExpense() {
+    const amount = document.getElementById('amount').value;
+    const category = document.getElementById('category').value.trim();
+
+    if (!amount || !category) return alert("Enter details");
+
+    await fetch('/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, category })
+    });
+
+    document.getElementById('amount').value = "";
+    document.getElementById('category').value = "";
+
+    fetchData();
+}
+
+// RECENT
+function updateRecent(categoryData) {
+    if (!categoryData) return;
+
+    recentCategories = Object.keys(categoryData).slice(-5);
+
+    let html = "";
+    recentCategories.forEach(cat => {
+        html += `<span class="chip" onclick="selectCategory('${cat}')">${cat}</span>`;
+    });
+
+    document.getElementById('recent').innerHTML = html;
+}
+
+function selectCategory(cat) {
+    document.getElementById('category').value = cat;
+}
+
+// 🔥 CHAT FUNCTION (UPGRADED)
+async function sendMessage() {
+    let input = document.getElementById("chatInput").value;
+
+    if (!input) return;
+
+    let chatBox = document.getElementById("chatBox");
+
+    chatBox.innerHTML += `<div class="msg-user">You: ${input}</div>`;
+
+    let res = await fetch("/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: input })
+    });
+
+    let data = await res.json();
+
+    chatBox.innerHTML += `<div class="msg-ai">AI: ${data.reply}</div>`;
+
+    document.getElementById("chatInput").value = "";
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+fetchData();
+</script>
+
+</body>
+</html>
